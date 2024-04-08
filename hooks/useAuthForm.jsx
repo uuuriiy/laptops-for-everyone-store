@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { useFormState } from "react-dom";
 
 import { signUpAction, resendVerificationEmailAction } from '@/lib/action';
@@ -9,11 +10,10 @@ import {
     SIGN_UP, RESEND_VERIFICATION_EMAIL,
     signInAction
 } from '@/utils/form';
-export const dynamic = 'force-dynamic';
 
 const useAuthForms = () => {
     const pathName = usePathname();
-    const { fields, title } = FORM[pathName];
+    const { fields, title, snackbarText } = FORM[pathName];
 
     const searchParams = useSearchParams();
     const email = searchParams.get('email');
@@ -38,7 +38,8 @@ const useAuthForms = () => {
         fields, title,
         formState, action,
         showAuthButtons, showFormLink,
-        formLinkProps, verificationSent
+        formLinkProps, verificationSent,
+        snackbarText,
     }
 };
 

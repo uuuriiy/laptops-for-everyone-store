@@ -1,5 +1,7 @@
 import { Inter } from 'next/font/google';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
+// import { Toaster } from 'react-hot-toast';
+// import dynamic from 'next/dynamic';
 
 import { SessionWrapper } from '@/components/SessionWrapper';
 
@@ -17,7 +19,9 @@ export default function RootLayout({ children }) {
         <SessionWrapper>
             <html lang="en">
                 <body className={inter.className}>
-                    <AppRouterCacheProvider>{children}</AppRouterCacheProvider>
+                    <AppRouterCacheProvider>
+                        {children}
+                    </AppRouterCacheProvider>
                 </body>
             </html>
         </SessionWrapper>

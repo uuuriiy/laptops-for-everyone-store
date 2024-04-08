@@ -11,7 +11,7 @@ import google from '@/public/google.png';
 
 import { isUsersEmailVerified } from '@/lib/query';
 
-const PASSWORD = 'password';
+export const PASSWORD = 'password';
 const CONFIRM_PASSWORD = 'confirmPassword';
 
 export const PATH = {
@@ -74,11 +74,13 @@ const form_fields = {
 export const FORM = {
     [SIGN_IN.path]: {
         fields: [form_fields.email, form_fields.password],
-        title: SIGN_IN.title
+        title: SIGN_IN.title,
+        snackbarText: 'Successful account creation',
     },
     [SIGN_UP.path]: {
         fields: [form_fields.username, form_fields.email, form_fields.password, form_fields.confirmPassword],
         title: SIGN_UP.title,
+        snackbarText: 'Successful user login',
     },
     [RESEND_VERIFICATION_EMAIL.path]: {
         title: RESEND_VERIFICATION_EMAIL.title,
@@ -88,12 +90,79 @@ export const FORM = {
 export const showPasswordInput = (id) => 
     id === PASSWORD || id === CONFIRM_PASSWORD;
 
+const containsUppercase = (item) => /[A-Z]/.test(item);
+const containsNumbercase = (item) => /[0-9]/.test(item);
+const containsSpecialChar = (item) =>
+    /[`!@#$%^&*()_\-+=\[\]{};':"\\|,.<>\/?~ ]/.test(item);
+
+const requirements = {
+    upperCase: { pass: false, message: "At least 1 upper case" },
+    specialCharacter: { pass: false, message: "At least 1 special character" },
+    totalNumber: { pass: false, message: "At least 1 number" },
+    passwordSize: { pass: false, message: "At least 8 characters" }
+};
+
+export const passwordRequirements = [
+    { id: 'specialCharacter', ...requirements.specialCharacter },
+    { id: 'upperCase', ...requirements.upperCase },
+    { id: 'totalNumber', ...requirements.totalNumber },
+    { id: 'passwordSize', ...requirements.passwordSize },
+];
+
+export const passwordSchema = zod.object({
+    password: zod.string().min(1, 'Password is required'),
+})
+    .superRefine(({ password }, checkPassComplexity) => {
+        let countOfUpperCase = 0,
+            countOfNumbers = 0,
+            countOfSpecialChar = 0;
+
+        for (let i = 0; i < password.length; i++) {
+            let ch = password.charAt(i);
+            if (containsUppercase(ch)) countOfUpperCase++;
+            else if (containsNumbercase(ch)) countOfNumbers++;
+            else if (containsSpecialChar(ch)) countOfSpecialChar++;
+        }
+
+        if (password.length >= 8) {
+            requirements.passwordSize.pass = true;
+        }
+
+        if (countOfUpperCase > 0) {
+            requirements.upperCase.pass = true;
+        }
+
+        if (countOfNumbers > 0) {
+            requirements.totalNumber.pass = true;
+        }
+
+        if (countOfSpecialChar > 0) {
+            requirements.specialCharacter.pass = true;
+        }
+
+        if (
+            !requirements.upperCase.pass ||
+            !requirements.specialCharacter.pass ||
+            !requirements.totalNumber.pass ||
+            !requirements.passwordSize.pass
+        ) {
+            checkPassComplexity.addIssue({
+                code: zod.ZodIssueCode.custom,
+                path: ["password"],
+                message: [
+                    { ...requirements.specialCharacter, id: 'specialCharacter' },
+                    { ...requirements.upperCase, id: 'upperCase' },
+                    { ...requirements.totalNumber, id: 'totalNumber' },
+                    { ...requirements.passwordSize, id: 'passwordSize' },
+                ],
+            });
+        }
+    });
+
 export const signUpShema = zod.object({
     username: zod.string().min(1, 'Username is required').max(100),
     email: zod.string().min(1, 'Email is required').email('Invalid email'),
-    password: zod.string()
-        .min(1, 'Password is required')
-        .min(8, 'Password must have 8 characters'),
+    password: zod.string().min(1, 'Password is required'),
     confirmPassword: zod.string().min(1, 'Password confirmation is required')
 })
     .refine(({ password, confirmPassword }) => password === confirmPassword, {
@@ -209,3 +278,5 @@ export const signInAction = async (_, formData) => {
         throw error;
     }
 };
+
+export const renderIcons = (pass) => pass ? '✅' : '❌';
